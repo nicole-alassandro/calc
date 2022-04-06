@@ -13,31 +13,24 @@
 // You should have received a copy of the GNU General Public License along
 // with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-enum errortype
+bool symbol_matches(
+    struct string * const symbol,
+    const  char   * const name)
 {
-    INVALID_USAGE = 1,
-    INVALID_TOKEN,
-    INVALID_EXPRESSION,
-    DIVIDE_BY_ZERO,
-    ALLOCATION_ERROR,
-    INPUT_ERROR,
-    MISSING_PARENTHESES,
-    UNDEFINED_SYMBOL,
-};
+    const size_t size = (size_t)(symbol->end - symbol->start);
 
-jmp_buf exc_env;
+    if (size != strlen(name))
+        return 0;
 
-void error(
-    const enum errortype code)
-{
-    longjmp(exc_env, (int)code);
+    return strncmp(symbol->start, name, size) == 0;
 }
 
-int check_zero(
-    const int n)
+enum symboltype resolve_symbol(
+    struct string * const symbol)
 {
-    if (!n)
-        error(DIVIDE_BY_ZERO);
+    if (symbol_matches(symbol, "ans"))
+        return SYMBOL_ANSWER;
 
-    return n;
+    error(UNDEFINED_SYMBOL);
+    return SYMBOL_UNKNOWN;
 }

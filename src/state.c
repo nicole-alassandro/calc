@@ -13,31 +13,7 @@
 // You should have received a copy of the GNU General Public License along
 // with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-enum errortype
-{
-    INVALID_USAGE = 1,
-    INVALID_TOKEN,
-    INVALID_EXPRESSION,
-    DIVIDE_BY_ZERO,
-    ALLOCATION_ERROR,
-    INPUT_ERROR,
-    MISSING_PARENTHESES,
-    UNDEFINED_SYMBOL,
-};
-
-jmp_buf exc_env;
-
-void error(
-    const enum errortype code)
-{
-    longjmp(exc_env, (int)code);
-}
-
-int check_zero(
-    const int n)
-{
-    if (!n)
-        error(DIVIDE_BY_ZERO);
-
-    return n;
-}
+volatile struct string calc_statement;
+volatile struct string calc_evaluated;
+volatile int           calc_answer;
+volatile size_t        calc_counter;

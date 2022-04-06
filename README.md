@@ -21,7 +21,8 @@ Alternatively running the program without arguments enables REPL mode:
 $ calc                                                                                                                                
 = 1+2
 3
-= 
+= ans+5
+8
 ```
 
 # Supported Operators
@@ -35,9 +36,15 @@ $ calc
 | `(`      | Left Parenthesis
 | `)`      | Right Parenthesis
 
+# Supported Variables
+
+| Name  | Description |
+| ----- | ----------- |
+| `ans` | Previously Calculated Answer
+
 # Caveats
 
 - No support for non-integer math
-- No support for variables
+- No support for creating variables
 - No builtin functions
 - No history buffer

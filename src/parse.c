@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License along
 // with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-int parse_primary   (volatile struct string *);
-int parse_expression(volatile struct string *, int, int);
+int parse_primary   (volatile struct state *);
+int parse_expression(volatile struct state *, int, int);
 
 struct token advance(
     volatile struct string * const string)
@@ -85,7 +85,22 @@ struct token advance(
         }
 
         default:
-            error(INVALID_TOKEN);
+        {
+            char c = *string->start;
+
+            if (!isalnum(c))
+                error(INVALID_TOKEN);
+
+            struct string symbol = *string;
+            while (isalnum(c) && string->start < string->end)
+                c = *(++string->start);
+
+            symbol.end = string->start;
+
+            result.type   = TOKEN_SYMBOL;
+            result.symbol = resolve_symbol(&symbol);
+            return result;
+        }
     }
 
     result.type = TOKEN_OPERATOR;
@@ -102,11 +117,13 @@ struct token peek(
 }
 
 int parse_expression(
-    volatile struct string * const expression,
+    volatile struct state * const state,
     const int lhs,
     const int min_precedence)
 {
     int result = lhs;
+
+    volatile struct string * const expression = &state->evaluated;
 
     struct token next = peek(expression);
     while (next.type == TOKEN_OPERATOR && next.precedence >= min_precedence)
@@ -115,12 +132,12 @@ int parse_expression(
         const int           precedence = next.precedence;
 
         advance(expression);
-        int rhs = parse_primary(expression);
+        int rhs = parse_primary(state);
 
         next = peek(expression);
         while (next.type == TOKEN_OPERATOR && next.precedence > precedence)
         {
-            rhs  = parse_expression(expression, rhs, precedence + 1);
+            rhs  = parse_expression(state, rhs, precedence + 1);
             next = peek(expression);
         }
 
@@ -139,9 +156,11 @@ int parse_expression(
 }
 
 int parse_primary(
-    volatile struct string * const expression)
+    volatile struct state * const state)
 {
     int result = 0;
+
+    volatile struct string * const expression = &state->evaluated;
 
     struct token next = advance(expression);
 
@@ -154,15 +173,13 @@ int parse_primary(
         {
             case SUBTRACTION:
             {
-                result = -parse_primary(expression);
+                result = -parse_primary(state);
                 break;
             }
 
             case LPAREN:
             {
-                result = parse_expression(
-                    expression, parse_primary(expression), 0
-                );
+                result = parse_expression(state, parse_primary(state), 0);
 
                 next = advance(expression);
                 if (next.type != TOKEN_OPERATOR || next.operator != RPAREN)
@@ -177,10 +194,23 @@ int parse_primary(
     }
     else if (next.type == TOKEN_NUMBER)
     {
-        result = next.value;
+        if (next.type == TOKEN_NUMBER)
+            result = next.value;
 
         next = peek(expression);
         if (next.type == TOKEN_OPERATOR && next.operator == LPAREN)
+            error(INVALID_EXPRESSION);
+        else if (next.type != TOKEN_OPERATOR && next.type != TOKEN_NONE)
+            error(INVALID_EXPRESSION);
+    }
+    else if (next.type == TOKEN_SYMBOL)
+    {
+        if (next.symbol == SYMBOL_ANSWER)
+            result = state->answer;
+
+        next = peek(expression);
+        if (next.type == TOKEN_OPERATOR && next.operator == LPAREN)
+            // TODO: Remove once built-in functions are supported
             error(INVALID_EXPRESSION);
         else if (next.type != TOKEN_OPERATOR && next.type != TOKEN_NONE)
             error(INVALID_EXPRESSION);
@@ -189,8 +219,8 @@ int parse_primary(
     return result;
 }
 
-int eval(
-    volatile struct string * const statement)
+void eval(
+    volatile struct state * const state)
 {
-    return parse_expression(statement, parse_primary(statement), 0);
+    state->answer = parse_expression(state, parse_primary(state), 0);
 }

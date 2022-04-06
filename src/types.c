@@ -34,12 +34,22 @@ enum tokentype
     TOKEN_NONE,
     TOKEN_NUMBER,
     TOKEN_OPERATOR,
+    TOKEN_SYMBOL,
+};
+
+enum symboltype
+{
+    SYMBOL_ANSWER,
+    SYMBOL_UNKNOWN,
 };
 
 struct token
 {
     union {
         int value;
+
+        enum symboltype symbol;
+
         struct {
             enum operator operator;
             int precedence;
@@ -47,4 +57,11 @@ struct token
     };
 
     enum tokentype type;
+};
+
+struct state
+{
+    int           answer;
+    struct string statement;
+    struct string evaluated;
 };

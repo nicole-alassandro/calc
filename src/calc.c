@@ -24,31 +24,33 @@
 
 #include "types.c"
 #include "error.c"
+#include "state.c"
 #include "input.c"
+#include "names.c"
 #include "parse.c"
+
+volatile struct state state;
 
 int main(
     int     argc,
     char ** argv)
 {
-    volatile struct string statement = {NULL, NULL};
-    volatile struct string evaluated = {NULL, NULL};
-
     int err = setjmp(exc_env);
     if (!err)
     {
         bool remaining_input = true;
         while (remaining_input)
         {
-            remaining_input = get_input(argc, argv, &statement);
+            remaining_input = get_input(argc, argv, &state.statement);
 
-            evaluated = statement;
-            printf("%d\n", eval(&evaluated));
+            state.evaluated = state.statement;
+            eval(&state);
+            printf("%d\n", state.answer);
 
-            free(statement.start);
+            free(state.statement.start);
 
-            statement = (struct string){NULL, NULL};
-            evaluated = (struct string){NULL, NULL};
+            state.statement = (struct string){NULL, NULL};
+            state.evaluated = (struct string){NULL, NULL};
         };
     }
     else if (err == INVALID_USAGE)
@@ -77,6 +79,10 @@ int main(
                 message = "Missing matching parentheses";
                 break;
 
+            case UNDEFINED_SYMBOL:
+                message = "Undefined symbol";
+                break;
+
             default:
                 message = "Encountered unknown error";
                 break;
@@ -86,15 +92,15 @@ int main(
             " %.*s\n"
             "%*s^\n"
             "ERROR: %s\n",
-            (int)(statement.end - statement.start),
-            statement.start,
-            (int)(evaluated.start - statement.start),
+            (int)(state.statement.end - state.statement.start),
+            state.statement.start,
+            (int)(state.evaluated.start - state.statement.start),
             "",
             message
         );
     }
 
-    free(statement.start);
+    free(state.statement.start);
 
     return err;
 }
