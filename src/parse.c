@@ -182,6 +182,8 @@ int parse_primary(
         next = peek(expression);
         if (next.type == TOKEN_OPERATOR && next.operator == LPAREN)
             error(INVALID_EXPRESSION);
+        else if (next.type != TOKEN_OPERATOR && next.type != TOKEN_NONE)
+            error(INVALID_EXPRESSION);
     }
 
     return result;
